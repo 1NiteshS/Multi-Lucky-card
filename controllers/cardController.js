@@ -5754,8 +5754,14 @@ export const calculateCardWin = async (req, res) => {
           return res.status(404).json({ message: `Card with cardNo ${cardNo} not found in the game` });
       }
 
+      let winningAmount;
+
       // Calculate the winning amount
-      const winningAmount = totalCardAmount * (multiplier*10);
+      if(multiplier < 0 || multiplier > 16) {
+        winningAmount = totalCardAmount * (multiplier*10);
+      } else{
+        return res.status(400).json({ message: 'Multiplier should be between 0 and 16' });
+      }
 
       // Save the calculated data into the SelectedCard model
       const selectedCardData = new SelectedCard({
