@@ -55,6 +55,7 @@ import {
   claimAllWinnings,
   getGameDetails,
   calculateCardWin,
+  getWeeklyGameData,
 } from "../controllers/cardController.js";
 import { authAdmin, authSubAdmin, authUser } from "../middleware/auth.js";
 //New
@@ -205,5 +206,7 @@ router.post("/claim-all-three/:adminId", claimAllWinningsThree);
 router.get('/game/:gameId', getGameDetails);
 // Route to calculate win for a specific card
 router.post('/game/:gameId/card/win', calculateCardWin);
+
+router.get('/getWeeklyData', getWeeklyGameData);
 
 export default router;

@@ -5792,3 +5792,73 @@ export const calculateCardWin = async (req, res) => {
       return res.status(500).json({ message: 'Server error', error });
   }
 };
+
+
+// Latest 
+export const getWeeklyGameData = async (req, res) => {
+  try {
+      const { startDate, endDate } = getCurrentWeek(); // Helper function to get the week's date range
+
+      // Fetch all users
+      const users = await SubAdmin.find({});
+
+      // Aggregate data for the week
+      const gameResults = await AdminGameResult.aggregate([
+          {
+              $match: {
+                  createdAt: {
+                      $gte: new Date(startDate),
+                      $lt: new Date(endDate),
+                  },
+              },
+          },
+          {
+              $unwind: "$winners",
+          },
+          {
+              $group: {
+                  _id: "$winners.adminId",
+                  totalBetAmount: { $sum: "$winners.betAmount" },
+                  totalWinAmount: { $sum: "$winners.winAmount" },
+              },
+          },
+      ]);
+
+      // Map results to users
+      const userData = users.map(user => {
+          const userGameData = gameResults.find(gr => gr._id === user.userId) || {};
+          return {
+              name: user.name,
+              email: user.email,
+              wallet: user.wallet,
+              totalBetAmount: userGameData.totalBetAmount || 0,
+              totalWinAmount: userGameData.totalWinAmount || 0,
+              totalClaimed: user.commission || 0, // Assuming commission as claimed amount
+          };
+      });
+
+      res.status(200).json({
+          week: { startDate, endDate },
+          users: userData,
+      });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Helper function to get the current week's date range (Monday-Saturday)
+const getCurrentWeek = () => {
+  const now = new Date();
+  const day = now.getDay();
+  const diffToMonday = now.getDate() - day + (day === 0 ? -6 : 1); // Adjust if it's Sunday
+
+  const monday = new Date(now.setDate(diffToMonday));
+  monday.setHours(0, 0, 0, 0);
+
+  const saturday = new Date(monday);
+  saturday.setDate(monday.getDate() + 5);
+  saturday.setHours(23, 59, 59, 999);
+
+  return { startDate: monday, endDate: saturday };
+};
