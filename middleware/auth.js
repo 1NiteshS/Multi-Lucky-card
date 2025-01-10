@@ -4,6 +4,7 @@ import SuperAdmin from '../models/SuperAdmin.js';
 import Admin from '../models/Admin.js';
 import SubAdmin from '../models/SubAdmin.js'; 
 import DistrictAdmin from '../models/DistrictAdmin.js'; 
+import User from '../models/User.js'
 
 export const authSuperAdmin = async (req, res, next) => {
   try {
@@ -268,24 +269,22 @@ export const authUser = async (req, res, next) => {
       throw verifyError;
     }
 
-    // Find admin with decoded ID
-    const admin = await User.findOne({
+    // Find subAdmin with decoded ID
+    const user = await User.findOne({
       _id: decoded._id,
-      // Optional: Add additional checks if needed
-      // adminId: req.params.adminId, // Uncomment if you want to match adminId from params
-      // isLoggedIn: true // Ensure admin is still logged in
     });
 
-    if (!admin) {
+    if (!user) {
       return res.status(401).json({ 
         success: false, 
         message: 'Please authenticate as Admin' 
       });
     }
 
-    // Attach token and admin to request
+    // Attach token and subAdmin to request
     req.token = token;
-    req.admin = admin;
+    req.user = user;
+    req.userId = user.userId;
 
     next();
   } catch (error) {

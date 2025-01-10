@@ -5,6 +5,7 @@ import {
     login,
     logout,
     getUserGameTotalInfo,
+    getUserProfile,
 } from "../controllers/userController.js";
 import { 
     getAdminGameResultsForAdmin,
@@ -12,7 +13,7 @@ import {
     getTotalWinningsOne, 
     getTotalWinningsThree, 
     getTotalWinningsTwo, 
-    getUserResultsForAdmin,
+    getUserResultsForUser,
     getUserResultsForAdminOne,
     getUserResultsForAdminThree,
     getUserResultsForAdminTwo
@@ -24,16 +25,18 @@ router.post("/create", authDistrictAdmin, create);
 router.post("/login", login);
 router.post("/logout", authUser, logout);
 
-router.get("/game-total-info/:subAdminId", getUserGameTotalInfo);
+router.get("/game-total-info/:userId", getUserGameTotalInfo);
 
-router.get("/total-winnings/:adminId", authUser, getTotalWinnings);
-router.get("/total-winnings-one/:adminId", authUser, getTotalWinningsOne);
-router.get("/total-winnings-two/:adminId", authUser, getTotalWinningsTwo);
-router.get("/total-winnings-three/:adminId", authUser, getTotalWinningsThree);
+router.get("/profile/:userId",authUser, getUserProfile);
 
-router.get("/admin-game-results/:userId", authUser,getUserResultsForAdmin);
-router.get("/admin-game-results-one/:userId", authUser,getUserResultsForAdminOne);
-router.get("/admin-game-results-two/:userId", authUser,getUserResultsForAdminTwo);
-router.get("/admin-game-results-three/:userId", authUser,getUserResultsForAdminThree);
+router.get("/total-winnings/:userId", authUser, getTotalWinnings);
+router.get("/total-winnings-one/:userId", authUser, getTotalWinningsOne);
+router.get("/total-winnings-two/:userId", authUser, getTotalWinningsTwo);
+router.get("/total-winnings-three/:userId", authUser, getTotalWinningsThree);
+
+router.get("/admin-game-results/:userId", authUser, getUserResultsForUser);
+router.get("/admin-game-results-one/:userId", authUser, getUserResultsForAdminOne);
+router.get("/admin-game-results-two/:userId", authUser, getUserResultsForAdminTwo);
+router.get("/admin-game-results-three/:userId", authUser, getUserResultsForAdminThree);
 
 export default router;

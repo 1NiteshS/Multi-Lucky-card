@@ -230,7 +230,7 @@ export const postCardNumber = async (req, res) => {
 };
 
 // Function to get the current gameID
-export const getCurrentGame = async () => {
+export const getCurrentGame = async (req, res) => {
   try {
     // Find the most recent game
     const currentGame = await Game.findOne().sort({ createdAt: -1 });
@@ -239,6 +239,15 @@ export const getCurrentGame = async () => {
       return { message: "No active game found" };
       // return res.status(404).json({ message: 'No active game found' });
     }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        gameId: currentGame.GameId,
+        // createdAt: currentGame.createdAt
+      },
+    });
+
     return {
       success: true,
       data: {
@@ -246,6 +255,7 @@ export const getCurrentGame = async () => {
         // createdAt: currentGame.createdAt
       },
     };
+    
   } catch (error) {
     console.error("Error fetching current game:", error);
     return {
@@ -967,14 +977,7 @@ export const placeBet = async (req, res) => {
   // console.log(adminId);
   
   try {
-    let user;
-    if (req.admin) {
-      // If the user is admin
-      user = req.admin;  // Admin details from middleware
-    } else if (req.subAdmin) {
-      // If the user is subadmin
-      user = req.subAdmin;  // SubAdmin details from middleware
-    }
+    let user = req.user;  // User details from middleware
 
     if (!user) {
       return res.status(404).json({ message: 'User not authenticated!' });
@@ -1003,7 +1006,7 @@ export const placeBet = async (req, res) => {
 
     // Create a new bet entry (gameDetails) to be pushed into the Bets array
     const newBet = {
-      adminID: user.adminId || user.subAdminId,  // Identify the user by adminId or subAdminId
+      adminID: user.userId,  // Identify the user by userId
       ticketsID: ticketsID,
       card: [],
       ticketTime: new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }), // Indian Standard Time (IST)
@@ -1044,21 +1047,16 @@ export const placeBet = async (req, res) => {
 
 // New
 export const getAdminLatestBets = async (req, res) => {
-  const { userId, type } = req.params;
+  const { userId } = req.params;
 
   try {
     // Find user based on type
-    let user;
-    if (type === 'subAdmin') {
-      user = await SubAdmin.findOne({ subAdminId: userId });
-    } else {
-      user = await Admin.findOne({ adminId: userId });
-    }
+    let  user = await SubAdmin.findOne({ subAdminId: userId });
     
     if (!user) {
       return res.status(404).json({ 
         success: false,
-        message: `${type === 'subAdmin' ? 'SubAdmin' : 'Admin'} not found!` 
+        message: `User not found!` 
       });
     }
 
@@ -1077,17 +1075,13 @@ export const getAdminLatestBets = async (req, res) => {
     // Filter bets to only include those from this user
     const userBets = latestGame.Bets.filter(bet => 
       bet.adminID === userId
-    );
-
-    console.log(userBets);
-    
+    );  
 
     if (userBets.length === 0) {
       return res.status(404).json({
         success: false,
-        message: `No bets found for this ${type}`,
+        message: `No bets found for this user`,
         userId: userId,
-        userType: type
       });
     }
 
@@ -1099,7 +1093,6 @@ export const getAdminLatestBets = async (req, res) => {
     return res.status(200).json({
       success: true,
       userId: userId,
-      userType: type,
       currentWalletBalance: user.wallet,
       gameDetails: {
         gameId: latestGame.GameId,
@@ -1118,10 +1111,10 @@ export const getAdminLatestBets = async (req, res) => {
     });
 
   } catch (error) {
-    console.error(`Error fetching ${type}'s latest game bets:`, error);
+    console.error(`Error fetching user's latest game bets:`, error);
     return res.status(500).json({ 
       success: false,
-      message: `Failed to fetch ${type}'s latest game bet data`,
+      message: `Failed to fetch user's latest game bet data`,
       error: error.message 
     });
   }
@@ -1216,7 +1209,7 @@ export const placeAutomatedBet = async (req, res) => {
 
 // New
 export const deleteBetByTicketId = async (req, res) => {
-  const { ticketId, type } = req.params;
+  const { ticketId } = req.params;
 
   try {
     // Step 1: Find the game and bet containing the ticket
@@ -1252,46 +1245,27 @@ export const deleteBetByTicketId = async (req, res) => {
     let updatedWallet;
 
     // Step 4: Update wallet based on type
-    if (type === 'subAdmin') {
-      // Update SubAdmin's wallet
-      const updatedSubAdmin = await SubAdmin.findOneAndUpdate(
-        { subAdminId: adminID },
-        { $inc: { wallet: totalAmount } },
-        { new: true }
-      );
-      
-      if (!updatedSubAdmin) {
-        return res.status(404).json({
-          success: false,
-          message: "SubAdmin not found"
-        });
-      }
-      
-      updatedWallet = updatedSubAdmin.wallet;
-    } else {
-      // Update Admin's wallet
-      const updatedAdmin = await Admin.findOneAndUpdate(
-        { adminId: adminID },
-        { $inc: { wallet: totalAmount } },
-        { new: true }
-      );
-      
-      if (!updatedAdmin) {
-        return res.status(404).json({
-          success: false,
-          message: "Admin not found"
-        });
-      }
-      
-      updatedWallet = updatedAdmin.wallet;
+    // Update SubAdmin's wallet
+    const updatedUser = await User.findOneAndUpdate(
+      { userId: adminID },
+      { $inc: { wallet: totalAmount } },
+      { new: true }
+    );
+    
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
     }
+    
+    updatedWallet = updatedUser.wallet;
 
     // Return the updated wallet amount in the response
     return res.status(200).json({
       success: true,
       message: `Delete successful for Ticket ID ${ticketId}`,
       deletedFromGame: result.GameId,
-      userType: type,
       updatedAdminWallet: updatedWallet
     });
   } catch (error) {
@@ -1494,35 +1468,19 @@ export const getAdminResults = async (req, res) => {
 // New
 export const claimWinnings = async (req, res) => {
   try {
-    const { adminId, gameId, ticketsID, userType } = req.body;
+    const { userId, gameId, ticketsID } = req.body;
 
-    let user;
     let actualAdminId;
 
-    if (userType === "admin") {
-      user = await Admin.findOne({ adminId });
-      if(!user) {
-        return res.status(404).json({
-          success: false,
-          message: "Admin not found",
-        });
-      }
-      actualAdminId = adminId;
-    } else if (userType === "subadmin") {
-      user = await SubAdmin.findOne({ subAdminId: adminId });
-      if(!user) {
-        return res.status(404).json({
-          success: false,
-          message: "SubAdmin not found",
-        });
-      }
-      actualAdminId = user.createdBy;
-    } else {
-      return res.status(400).json({
+
+    let user = await User.findOne({ userId });
+    if(!user) {
+      return res.status(404).json({
         success: false,
-        message: "Invalid user type",
+        message: "User not found",
       });
     }
+    actualAdminId = userId;
 
     const gameResult = await AdminGameResult.findOne({ gameId });
     if(!gameResult) {
@@ -1540,7 +1498,7 @@ export const claimWinnings = async (req, res) => {
     if (!winner) {
       return res.status(400).json({
         success: false,
-        message: `${userType} is not a winner with the specified ticket in this game`,
+        message: `User is not a winner with the specified ticket in this game`,
       });
     }
 
@@ -1564,7 +1522,7 @@ export const claimWinnings = async (req, res) => {
       success: true,
       message: "Winnings claimed successfully",
       data: {
-        adminID: userType === "admin" ? user.adminId : user.subAdminId,
+        adminID: user.userId,
         gameId: gameResult.gameId,
         ticketId: winner.ticketId,
         claimedAmount: winner.winAmount,
@@ -1779,11 +1737,11 @@ export const getAdminGameResultsForAdmin = async (req, res) => {
 // Get total winnings amount for an admin
 export const getTotalWinnings = async (req, res) => {
   try {
-    const { adminId } = req.params;
+    const { userId } = req.params;
     const { from, to } = req.query;
 
-    // Check if authenticated admin matches the requested adminId
-    if (req.admin.adminId !== adminId) {
+    // Check if authenticated user matches the requested userId
+    if (req.user.userId !== userId) {
       return res.status(403).json({
         success: false,
         message: "Unauthorized access",
@@ -1811,7 +1769,7 @@ export const getTotalWinnings = async (req, res) => {
     // Calculate total winnings and collect winning games
     gameResults.forEach((game) => {
       const adminWinners = game.winners.filter(
-        (winner) => winner.adminId === adminId && winner.status === "win"
+        (winner) => winner.adminId === userId && winner.status === "win"
       );
 
       adminWinners.forEach((winner) => {
@@ -1847,114 +1805,58 @@ export const getTotalWinnings = async (req, res) => {
 // New
 export const claimAllWinnings = async (req, res) => {
   try {
-    const { adminId } = req.params;
-    const { userType } = req.body; // userType can be "admin" or "subadmin"
+    const { userId } = req.params;
 
-    let user;
     let totalClaimedAmount = 0;
     const claimedGames = [];
 
-    if (userType === "admin") {
-      // Find the admin
-      const admin = await Admin.findOne({ adminId });
-      if (!admin) {
-        return res.status(404).json({
-          success: false,
-          message: "Admin not found",
-        });
-      }
-
-      // Find all game results with unclaimed winnings for this admin
-      const gameResults = await AdminGameResult.find({
-        "winners.adminId": adminId,
-        "winners.status": "win",
-      });
-
-      // Process each game result
-      for (const game of gameResults) {
-        const adminWinners = game.winners.filter(
-          (winner) => winner.adminId === adminId && winner.status === "win"
-        );
-
-        for (const winner of adminWinners) {
-          // Update winner status to claimed
-          winner.status = "claimed";
-          totalClaimedAmount += winner.winAmount;
-
-          claimedGames.push({
-            gameId: game.gameId,
-            ticketsID: winner.ticketsID,
-            winAmount: winner.winAmount,
-          });
-        }
-
-        await game.save();
-      }
-
-      // Update admin's wallet with total claimed amount
-      if (totalClaimedAmount > 0) {
-        admin.wallet += totalClaimedAmount;
-        await admin.save();
-      }
-
-      user = admin; // Set user to admin
-
-    } else if (userType === "subadmin") {
-      // Find the subadmin
-      const subAdmin = await SubAdmin.findOne({ subAdminId: adminId });
-      if (!subAdmin) {
-        return res.status(404).json({
-          success: false,
-          message: "SubAdmin not found",
-        });
-      }
-
-      // Find all game results with unclaimed winnings for the subadmin
-      const gameResults = await AdminGameResult.find({
-        "winners.adminId": subAdmin.createdBy, // adminId of the admin who created the subadmin
-        "winners.status": "win",
-      });
-
-      // Process each game result
-      for (const game of gameResults) {
-        const subAdminWinners = game.winners.filter(
-          (winner) => winner.adminId === subAdmin.createdBy && winner.status === "win"
-        );
-
-        for (const winner of subAdminWinners) {
-          // Update winner status to claimed
-          winner.status = "claimed";
-          totalClaimedAmount += winner.winAmount;
-
-          claimedGames.push({
-            gameId: game.gameId,
-            ticketsID: winner.ticketsID,
-            winAmount: winner.winAmount,
-          });
-        }
-
-        await game.save();
-      }
-
-      // Update subadmin's wallet with total claimed amount
-      if (totalClaimedAmount > 0) {
-        subAdmin.wallet += totalClaimedAmount;
-        await subAdmin.save();
-      }
-
-      user = subAdmin; // Set user to subadmin
-    } else {
-      return res.status(400).json({
+    // Find the User
+    let user = await User.findOne({ userId });
+    if (!user) {
+      return res.status(404).json({
         success: false,
-        message: "Invalid user type",
+        message: "User not found",
       });
+    }
+
+    // Find all game results with unclaimed winnings for this user
+    const gameResults = await AdminGameResult.find({
+      "winners.adminId": userId,
+      "winners.status": "win",
+    });
+
+      // Process each game result
+    for (const game of gameResults) {
+      const adminWinners = game.winners.filter(
+        (winner) => winner.adminId === userId && winner.status === "win"
+      );
+
+      for (const winner of adminWinners) {
+        // Update winner status to claimed
+        winner.status = "claimed";
+        totalClaimedAmount += winner.winAmount;
+
+        claimedGames.push({
+          gameId: game.gameId,
+          ticketsID: winner.ticketsID,
+          winAmount: winner.winAmount,
+        });
+      }
+
+      await game.save();
+    }
+
+    // Update user's wallet with total claimed amount
+    if (totalClaimedAmount > 0) {
+      user.wallet += totalClaimedAmount;
+      await user.save();
     }
 
     return res.status(200).json({
       success: true,
-      message: `${userType.charAt(0).toUpperCase() + userType.slice(1)} winnings claimed successfully`,
+      message: `User winnings claimed successfully`,
       data: {
-        adminID: user.subAdminId || user.adminId, // Return the user ID based on type
+        adminID: user.userId, // Return the user ID based on type
         totalClaimedAmount,
         claimedGames,
         newWalletBalance: user.wallet,
@@ -5039,11 +4941,11 @@ export const getAdminResultsThree = async (req, res) => {
 //for 16 cards
 export const getTotalWinningsOne = async (req, res) => {
   try {
-    const { adminId } = req.params;
+    const { userId } = req.params;
     const { from, to } = req.query;
 
     // Check if authenticated admin matches the requested adminId
-    if (req.admin.adminId !== adminId) {
+    if (req.user.userId !== userId) {
       return res.status(403).json({
         success: false,
         message: "Unauthorized access",
@@ -5071,7 +4973,7 @@ export const getTotalWinningsOne = async (req, res) => {
     // Calculate total winnings and collect winning games
     gameResults.forEach((game) => {
       const adminWinners = game.winners.filter(
-        (winner) => winner.adminId === adminId && winner.status === "win"
+        (winner) => winner.adminId === userId && winner.status === "win"
       );
 
       adminWinners.forEach((winner) => {
@@ -5106,11 +5008,11 @@ export const getTotalWinningsOne = async (req, res) => {
 //for 10 cards
 export const getTotalWinningsTwo = async (req, res) => {
   try {
-    const { adminId } = req.params;
+    const { userId } = req.params;
     const { from, to } = req.query;
 
     // Check if authenticated admin matches the requested adminId
-    if (req.admin.adminId !== adminId) {
+    if (req.user.userId !== userId) {
       return res.status(403).json({
         success: false,
         message: "Unauthorized access",
@@ -5138,7 +5040,7 @@ export const getTotalWinningsTwo = async (req, res) => {
     // Calculate total winnings and collect winning games
     gameResults.forEach((game) => {
       const adminWinners = game.winners.filter(
-        (winner) => winner.adminId === adminId && winner.status === "win"
+        (winner) => winner.adminId === userId && winner.status === "win"
       );
 
       adminWinners.forEach((winner) => {
@@ -5173,11 +5075,11 @@ export const getTotalWinningsTwo = async (req, res) => {
 //for 10 cards
 export const getTotalWinningsThree = async (req, res) => {
   try {
-    const { adminId } = req.params;
+    const { userId } = req.params;
     const { from, to } = req.query;
 
     // Check if authenticated admin matches the requested adminId
-    if (req.admin.adminId !== adminId) {
+    if (req.user.userId !== userId) {
       return res.status(403).json({
         success: false,
         message: "Unauthorized access",
@@ -5205,7 +5107,7 @@ export const getTotalWinningsThree = async (req, res) => {
     // Calculate total winnings and collect winning games
     gameResults.forEach((game) => {
       const adminWinners = game.winners.filter(
-        (winner) => winner.adminId === adminId && winner.status === "win"
+        (winner) => winner.adminId === userId && winner.status === "win"
       );
 
       adminWinners.forEach((winner) => {
@@ -5239,7 +5141,7 @@ export const getTotalWinningsThree = async (req, res) => {
 };
 
 // Latest have to do 3 times
-export const getUserResultsForAdmin = async (req, res) => {
+export const getUserResultsForUser = async (req, res) => {
   try {
     const { userId } = req.params;
     const gameId = req.params.gameId || req.query.gameId;

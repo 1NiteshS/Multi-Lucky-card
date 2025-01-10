@@ -70,17 +70,17 @@ const router = express.Router();
 router.get("/calculate", calculateAmounts);
 
 // Route to place a bet
-router.post("/bet", authAdmin, placeBet);
+router.post("/bet", authUser, placeBet);
 
 // New
 // Route for SubAdmin to place a bet
 router.post('/bet/subadmin/:adminId', authSubAdmin, placeBet);
 
 // In your routes file
-router.get('/getBets/:userId/:type', getAdminLatestBets);
+router.get('/getBets/:userId', getAdminLatestBets);
 
 // DELETE /api/bets/:ticketId
-router.delete('/deleteBets/:ticketId/:type', deleteBetByTicketId);
+router.delete('/deleteBets/:ticketId', deleteBetByTicketId);
 
 router.post("/betBot", placeAutomatedBet);
 
@@ -196,7 +196,7 @@ router.get("/recent-winning-cards-three", getLatestSelectedCardsThree);
 
 
 // Claim all winnings for an admin
-router.post("/claim-all/:adminId", claimAllWinnings);
+router.post("/claim-all/:userId", claimAllWinnings);
 router.post("/claim-all-one/:adminId", claimAllWinningsOne);
 router.post("/claim-all-two/:adminId", claimAllWinningsTwo);
 router.post("/claim-all-three/:adminId", claimAllWinningsThree);

@@ -56,36 +56,27 @@ export const create = async (req, res) => {
 // New
 export const login = async (req, res) => {
     try {
-        const { email, password, device } = req.body;
-
+        const { email, password } = req.body;
 
         // Find admin
-        const admin = await User.findOne({ email });
-        if (!admin) {
-        return res.status(400).json({
-            success: false,
-            message: "Admin not found",
-        });
-        }
-
-        // Check if device is PC
-        // if (admin.device.toLowerCase() !== "Phone".toLowerCase) {
-        //     return res.status(403).json({
-        //         success: false,
-        //         message: 'Login is only allowed from Phone devices'
-        //     });
-        // }
-
-        // Check if the user is already logged in from another device type
-        if (admin.isLoggedIn && admin.device !== device) {
+        const user = await User.findOne({ email });
+        if (!user) {
             return res.status(400).json({
                 success: false,
-                message: `You are already logged in. Please log out  before logging in .`,
+                message: "User not found",
+            });
+        }
+
+        // Check if the user is already logged in from another device type
+        if (user.isLoggedIn) {
+            return res.status(400).json({
+                success: false,
+                message: `You are already logged in. Please log out  before logging in.`,
             });
         }
 
         // Check password
-        const isPasswordMatch = await bcrypt.compare(password, admin.password);
+        const isPasswordMatch = await bcrypt.compare(password, user.password);
         if (!isPasswordMatch) {
         return res.status(400).json({
             success: false,
@@ -94,9 +85,8 @@ export const login = async (req, res) => {
         }
 
         // Update admin login status and device
-        admin.isLoggedIn = true;
-        admin.device = device;
-        await admin.save();
+        // admin.isLoggedIn = true;
+        await user.save();
 
         // Get today's date at midnight
         const today = new Date();
@@ -125,14 +115,14 @@ export const login = async (req, res) => {
         userCount.loggedInUsers += 1;
 
         // Add unique user if not already exists
-        if (!userCount.uniqueUsers.some((id) => id.equals(admin._id))) {
-        userCount.uniqueUsers.push(admin._id);
+        if (!userCount.uniqueUsers.some((id) => id.equals(user._id))) {
+        userCount.uniqueUsers.push(user._id);
         }
 
         await userCount.save();
 
         // Generate token
-        const token = jwt.sign({ _id: admin._id }, process.env.JWT_SECRET);
+        const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
 
         // Emit socket event with updated counts
         const io = getIO();
@@ -145,8 +135,7 @@ export const login = async (req, res) => {
         res.status(200).json({
             success: true,
             token,
-            adminId: admin.userId,
-            device,
+            userId: user.userId,
             loggedInUsers: userCount.loggedInUsers,
             totalLogins: userCount.totalLogins,
             uniqueUsers: userCount.uniqueUsers.length,
@@ -164,16 +153,16 @@ export const login = async (req, res) => {
 // New
 export const logout = async (req, res) => {
     try {
-        const admin = await User.findById(req.admin._id);
+        const user = await User.findById(req.user._id);
 
-        if (!admin) {
+        if (!user) {
         return res.status(400).json({
             success: false,
-            message: "Admin not found",
+            message: "User not found",
         });
         }
 
-        admin.isLoggedIn = false;
+        user.isLoggedIn = false;
         await admin.save();
 
         const today = new Date();
@@ -196,6 +185,77 @@ export const logout = async (req, res) => {
         success: false,
         message: "Logout failed",
         error: error.message,
+        });
+    }
+};
+
+export const getUserProfile = async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const authenticatedUser =  req.user;
+
+
+        // Verify user type and authentication
+        if (!authenticatedUser) {
+            return res.status(401).json({
+                success: false,
+                error: "Authentication required"
+            });
+        } 
+
+        // Select appropriate model and fields based on type
+
+        let user = await User.findOne({ userId }).select(
+                "name email userId wallet isVerified commission createdAt createdBy"
+        );
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                error: `User not found`
+            });
+        }
+
+        // Check if user is requesting their own profile
+        const userIdField = 'userId';
+        if (user[userIdField] !== authenticatedUser[userIdField]) {
+            return res.status(403).json({
+                success: false,
+                error: "You can only view your own profile"
+            });
+        }
+
+        // Prepare response based on user type
+        const baseResponse = {
+            name: user.name,
+            email: user.email,
+            [userIdField]: user[userIdField],
+            wallet: user.wallet,
+            device: user.device,
+            isVerified: user.isVerified,
+            joinedDate: user.createdAt
+        };
+
+        // Add subAdmin specific fields if applicable
+        const responseData = 'user'
+        ? {
+            ...baseResponse,
+            commission: user.commission,
+            createdBy: user.createdBy,
+            device: user.device
+            }
+        : baseResponse;
+
+        res.status(200).json({
+            success: true,
+            data: responseData
+        });
+
+    } catch (error) {
+        console.error(`Error fetching ${req.params.type} profile:`, error);
+        res.status(500).json({
+            success: false,
+            error: "Internal server error"
         });
     }
 };
