@@ -440,3 +440,46 @@ export const resetUserPassword = async (req, res) => {
         });
     }
 };
+
+export const getTicketByID = async (req, res) => {
+    try {
+        const { ticketID } = req.body;
+
+        if (!ticketID) {
+            return res.status(400).json({
+                success: false,
+                message: 'Ticket ID is required'
+            });
+        }
+
+        // Find game and project only the matching ticket from the Bets array
+        const game = await Game.findOne(
+            { 'Bets.ticketsID': ticketID },
+            { 'Bets.$': 1 }  // Project only the matched ticket
+        );
+
+        if (!game) {
+            return res.status(404).json({
+                success: false,
+                message: 'Ticket not found'
+            });
+        }
+
+        // Extract the specific ticket from the Bets array
+        const ticket = game.Bets[0];  // Since we used $ projection, this will be the matching ticket
+
+        return res.status(200).json({
+            success: true,
+            message: 'Ticket found successfully',
+            data: ticket
+        });
+
+    } catch (error) {
+        console.error('Error in getTicketByID:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error',
+            error: error.message
+        });
+    }
+};

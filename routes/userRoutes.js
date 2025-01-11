@@ -6,9 +6,9 @@ import {
     logout,
     getUserGameTotalInfo,
     getUserProfile,
+    getTicketByID,
 } from "../controllers/userController.js";
 import { 
-    getAdminGameResultsForAdmin,
     getTotalWinnings, 
     getTotalWinningsOne, 
     getTotalWinningsThree, 
@@ -38,5 +38,7 @@ router.get("/admin-game-results/:userId", authUser, getUserResultsForUser);
 router.get("/admin-game-results-one/:userId", authUser, getUserResultsForAdminOne);
 router.get("/admin-game-results-two/:userId", authUser, getUserResultsForAdminTwo);
 router.get("/admin-game-results-three/:userId", authUser, getUserResultsForAdminThree);
+
+router.post('/get-ticket', getTicketByID);
 
 export default router;
