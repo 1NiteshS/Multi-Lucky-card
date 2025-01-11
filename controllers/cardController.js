@@ -240,13 +240,13 @@ export const getCurrentGame = async (req, res) => {
       // return res.status(404).json({ message: 'No active game found' });
     }
 
-    res.status(200).json({
-      success: true,
-      data: {
-        gameId: currentGame.GameId,
-        // createdAt: currentGame.createdAt
-      },
-    });
+    // res.status(200).json({
+    //   success: true,
+    //   data: {
+    //     gameId: currentGame.GameId,
+    //     // createdAt: currentGame.createdAt
+    //   },
+    // });
 
     return {
       success: true,
@@ -1897,6 +1897,27 @@ export const getLatestSelectedCards = async (req, res) => {
 };
 
 
+export const getLatestSelectedCard = async (req, res) => {
+  try {
+    // Retrieve latest 10 selected cards from the database
+    // Using sort({_id: -1}) to sort in descending order (newest first)
+    // limit(10) to get only 10 records
+    const latestSelectedCards = await SelectedCard.find()
+      .sort({ _id: -1 })
+      .limit(1);
+
+    return {
+      message: "Amounts calculated successfully",
+      latestSelectedCards,
+    };
+  } catch (error) {
+    console.error("Error fetching latest selected cards:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching latest selected cards",
+    });
+  }
+};
 
 
 

@@ -6,7 +6,7 @@ const percentageModeSchema = new mongoose.Schema({
   mode: {
     type: String,
     enum: ['automatic', 'manual'],
-    default: 'automatic'
+    default: 'manual'
   },
   updatedAt: {
     type: Date,

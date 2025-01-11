@@ -4,6 +4,7 @@ import UserCount from '../models/UserCount.js'
 import { Server } from "socket.io";
 import { calculateAmounts as calcAmounts, getCurrentGame } from '../controllers/cardController.js';
 import  PercentageMode  from "../models/PercentageMode.js"
+import { getLatestSelectedCard } from "../controllers/cardController.js"
 
 let mainTime = 12;
 let timer = {
@@ -40,6 +41,12 @@ const startTimer = (socketOrIO) => {
                             console.log('Starting calculations early...');
                             calculationStarted = true;
                             calculationPromise = calcAmounts(timer.remainingTime).catch(error => {
+                                console.error('Calculation error:', error);
+                                return null;
+                            });
+                        }
+                        else{
+                            calculationPromise = getLatestSelectedCard(timer.remainingTime).catch(error => {
                                 console.error('Calculation error:', error);
                                 return null;
                             });

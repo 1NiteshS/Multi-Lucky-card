@@ -15,7 +15,7 @@ export const create = async (req, res) => {
         const { name, email, password } = req.body;
 
         // Assuming logged-in Admin's ID is available in `req.admin.adminId`
-        const subAdminId = req.admin.adminId;
+        const subAdminId = req.subAdmin.subAdminId;
 
         // Check if SubAdmin already exists with this email
         // const existingSubAdmin = await SubAdmin.findOne({ email });

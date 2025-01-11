@@ -13,15 +13,7 @@ export const create = async (req, res) => {
     try {
         const { name, email, password } = req.body;
 
-        // Assuming logged-in Admin's ID is available in `req.admin.adminId`
-        const districtAdminId = req.admin.adminId;
-
-        // Check if SubAdmin already exists with this email
-        // const existingSubAdmin = await SubAdmin.findOne({ email });
-
-        // if (existingSubAdmin) {
-        //   return res.status(400).send({ error: "Email already in use" });
-        // }
+        const districtAdminId = req.districtAdmin.districtAdminId;
 
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 8);

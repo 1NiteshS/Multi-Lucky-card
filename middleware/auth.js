@@ -132,14 +132,14 @@ export const authSubAdmin = async (req, res, next) => {
     }
 
     // Find admin with decoded ID
-    const admin = await SubAdmin.findOne({
+    const subAdmin = await SubAdmin.findOne({
       _id: decoded._id,
       // Optional: Add additional checks if needed
       // adminId: req.params.adminId, // Uncomment if you want to match adminId from params
       // isLoggedIn: true // Ensure admin is still logged in
     });
 
-    if (!admin) {
+    if (!subAdmin) {
       return res.status(401).json({ 
         success: false, 
         message: 'Please authenticate as Admin' 
@@ -148,7 +148,7 @@ export const authSubAdmin = async (req, res, next) => {
 
     // Attach token and admin to request
     req.token = token;
-    req.admin = admin;
+    req.subAdmin = subAdmin;
 
     next();
   } catch (error) {
@@ -201,14 +201,14 @@ export const authDistrictAdmin = async (req, res, next) => {
     }
 
     // Find admin with decoded ID
-    const admin = await DistrictAdmin.findOne({
+    const districtAdmin = await DistrictAdmin.findOne({
       _id: decoded._id,
       // Optional: Add additional checks if needed
       // adminId: req.params.adminId, // Uncomment if you want to match adminId from params
       // isLoggedIn: true // Ensure admin is still logged in
     });
 
-    if (!admin) {
+    if (!districtAdmin) {
       return res.status(401).json({ 
         success: false, 
         message: 'Please authenticate as DistrictAdmin' 
@@ -217,7 +217,7 @@ export const authDistrictAdmin = async (req, res, next) => {
 
     // Attach token and admin to request
     req.token = token;
-    req.admin = admin;
+    req.districtAdmin = districtAdmin;
 
     next();
   } catch (error) {
