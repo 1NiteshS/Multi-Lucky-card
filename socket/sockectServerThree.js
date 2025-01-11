@@ -2,7 +2,8 @@ import Game from '../models/gameModelThree.js';
 import User from '../models/User.js';
 import UserCount from '../models/UserCount.js'
 import { Server } from "socket.io";
-import { calculateAmountsThree as calcAmounts, getCurrentGameThree } from '../controllers/cardController.js';
+import { calculateAmountsThree as calcAmounts, getCurrentGameThree, getLatestSelectedCardThree, } from '../controllers/cardController.js';
+import PercentageMode from '../models/PercentageMode.js';
 
 let mainTime = 40;
 let timer = {
@@ -34,12 +35,21 @@ const startTimer = (socketOrIO) => {
                     console.log(timer.remainingTime);
 
                     if (timer.remainingTime === CALCULATION_START_TIME && !calculationStarted) {
-                        console.log('Starting calculations early...');
-                        calculationStarted = true;
-                        calculationPromise = calcAmounts(timer.remainingTime).catch(error => {
-                            console.error('Calculation error:', error);
-                            return null;
-                        });
+                        const percentageMode = await PercentageMode.findOne();                        
+                        if(percentageMode.mode === 'automatic'){
+                            console.log('Starting calculations early...');
+                            calculationStarted = true;
+                            calculationPromise = calcAmounts(timer.remainingTime).catch(error => {
+                                console.error('Calculation error:', error);
+                                return null;
+                            });
+                        }
+                        else{
+                            calculationPromise = getLatestSelectedCardThree(timer.remainingTime).catch(error => {
+                                console.error('Calculation error:', error);
+                                return null;
+                            });
+                        }
                     }
 
                     if (timer.remainingTime === RESULT_DEADLINE && calculationPromise) {

@@ -1923,9 +1923,6 @@ export const getLatestSelectedCard = async (req, res) => {
 
 
 
-
-
-
 // Latest have to do 3 times
 //for 16 cards
 export const getAllCardsOne = async (req, res) => {
@@ -5590,6 +5587,74 @@ export const getUserResultsForAdminThree = async (req, res) => {
   }
 };
 
+// Latest have to do 3 times
+// for 16 cards
+export const getLatestSelectedCardOne = async (req, res) => {
+  try {
+    // Retrieve latest 10 selected cards from the database
+    // Using sort({_id: -1}) to sort in descending order (newest first)
+    // limit(10) to get only 10 records
+    const latestSelectedCards = await SelectedCardOne.find()
+      .sort({ _id: -1 })
+      .limit(1);
+
+    return {
+      message: "Amounts calculated successfully",
+      latestSelectedCards,
+    };
+  } catch (error) {
+    console.error("Error fetching latest selected cards:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching latest selected cards",
+    });
+  }
+};
+// for 10 card
+export const getLatestSelectedCardTwo = async (req, res) => {
+  try {
+    // Retrieve latest 10 selected cards from the database
+    // Using sort({_id: -1}) to sort in descending order (newest first)
+    // limit(10) to get only 10 records
+    const latestSelectedCards = await SelectedCardTwo.find()
+      .sort({ _id: -1 })
+      .limit(1);
+
+    return {
+      message: "Amounts calculated successfully",
+      latestSelectedCards,
+    };
+  } catch (error) {
+    console.error("Error fetching latest selected cards:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching latest selected cards",
+    });
+  }
+};
+
+// for 10 card
+export const getLatestSelectedCardThree = async (req, res) => {
+  try {
+    // Retrieve latest 10 selected cards from the database
+    // Using sort({_id: -1}) to sort in descending order (newest first)
+    // limit(10) to get only 10 records
+    const latestSelectedCards = await SelectedCardThree.find()
+      .sort({ _id: -1 })
+      .limit(1);
+
+    return {
+      message: "Amounts calculated successfully",
+      latestSelectedCards,
+    };
+  } catch (error) {
+    console.error("Error fetching latest selected cards:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching latest selected cards",
+    });
+  }
+};
 
 
 // Latest
