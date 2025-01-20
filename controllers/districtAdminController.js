@@ -533,7 +533,7 @@ export const getUserByDistrictAdmin = async (req, res) => {
             districtAdminName: districtAdmin.name,
             users: user
         };
-  
+
         res.status(200).json(response);
 
     } catch (error) {

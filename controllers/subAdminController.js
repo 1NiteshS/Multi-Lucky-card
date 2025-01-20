@@ -524,6 +524,7 @@ export const getDistrictAdminByAdmin = async (req, res) => {
 
     //check if the admin exists
     const subAdmin = await SubAdmin.findOne({ subAdminId });
+    
     if (!subAdmin) {
       return res.status(404).json({message: "SubAdmin not found"});
     }

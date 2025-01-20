@@ -25,7 +25,7 @@ router.get('/transactions', authSubAdmin, getTransactionHistory);
 
 router.post("/set-commission", setCommission);
 
-router.get("/districtadmins/:adminId", getDistrictAdminByAdmin);
+router.get("/districtadmins/:subAdminId", getDistrictAdminByAdmin);
 
 
 export default router;
