@@ -17,7 +17,7 @@ router.post("/create", authSubAdmin, create);
 router.post("/login", login);
 router.post("/logout", authDistrictAdmin, logout);
 
-router.get("/game-total-info/:subAdminId", getDistrictAdminGameTotalInfo);
+router.get("/game-total-info/:districtAdminId", getDistrictAdminGameTotalInfo);
 
 router.post('/transfer-money', transferMoney);
 

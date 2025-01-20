@@ -258,7 +258,7 @@ export const getUserGameTotalInfo = async (req, res) => {
         const { userId } = req.params;
         const { from, to } = req.query;
 
-        // Fetch the necessary data from the database for sub-admin
+        // Fetch the necessary data from the database for user
         const { games, selectedCards, user, adminGameResults } = await getUserGameData(userId, from, to);
 
         // Calculate the required metrics
@@ -273,7 +273,7 @@ export const getUserGameTotalInfo = async (req, res) => {
         } = await calculateUserGameTotals(
             games,
             selectedCards,
-            districtAdmin,
+            user,
             adminGameResults
         );
 
@@ -291,10 +291,10 @@ export const getUserGameTotalInfo = async (req, res) => {
         },
         });
     } catch (error) {
-        console.error("Error retrieving sub-admin game total info:", error);
+        console.error("Error retrievin user game total info:", error);
         return res.status(500).json({
         success: false,
-        message: "Error retrieving sub-admin game total info",
+        message: "Error retrieving user game total info",
         error: error.message,
         });
     }
@@ -324,29 +324,32 @@ async function getUserGameData(userId, from, to) {
 
     const selectedCards = await SelectedCard.find({
         ...dateFilter,
-        adminId: districtAdmin.adminId,
+        adminId: user.adminId,
     });
 
     const adminGameResults = await AdminGameResult.find({
         ...dateFilter,
-        "winners.adminId": districtAdmin.adminId,
+        "winners.adminId": user.adminId,
     });
 
     return {
         games,
         selectedCards,
-        districtAdmin,
+        user,
         adminGameResults,
     };
 }
 
 // New
-// Helper function to calculate sub-admin game totals
+// Helper function to calculate user game totals
 async function calculateUserGameTotals(games, user, adminGameResults) {
     let totalBetAmount = 0;
     let totalWinAmount = 0;
     let totalClaimedAmount = 0;
 
+    // Ensure adminGameResults is an array
+    adminGameResults = Array.isArray(adminGameResults) ? adminGameResults : [];
+    
     // Calculate total bet amount
     for (const game of games) {
         const userBets = game.Bets.filter(

@@ -157,10 +157,10 @@ export const getDistrictAdminGameTotalInfo = async (req, res) => {
         },
         });
     } catch (error) {
-        console.error("Error retrieving sub-admin game total info:", error);
+        console.error("Error retrieving District-Admin game total info:", error);
         return res.status(500).json({
         success: false,
-        message: "Error retrieving sub-admin game total info",
+        message: "Error retrieving District-Admin game total info",
         error: error.message,
         });
     }
@@ -208,39 +208,37 @@ async function getDistrictAdminGameData(districtAdminId, from, to) {
 
 // New
 // Helper function to calculate sub-admin game totals
-async function calculateDistrictAdminGameTotals(
-    games,
-    selectedCards,
-    districtAdmin,
-    adminGameResults
-    ) {
+async function calculateDistrictAdminGameTotals(games, districtAdmin, adminGameResults) {
     let totalBetAmount = 0;
     let totalWinAmount = 0;
     let totalClaimedAmount = 0;
 
+    // Ensure adminGameResults is an array
+    adminGameResults = Array.isArray(adminGameResults) ? adminGameResults : [];
+
     // Calculate total bet amount
     for (const game of games) {
         const districtAdminBets = game.Bets.filter(
-        (bet) => bet.adminID === districtAdmin.adminId
+            (bet) => bet.adminID === districtAdmin.adminId
         );
         for (const bet of districtAdminBets) {
-        totalBetAmount += bet.card.reduce(
-            (total, card) => total + card.Amount,
-            0
-        );
+            totalBetAmount += bet.card.reduce(
+                (total, card) => total + card.Amount,
+                0
+            );
         }
     }
 
     // Calculate total win amount from AdminGameResult
     for (const result of adminGameResults) {
         const winnerEntry = result.winners.find(
-        (winner) => winner.adminId === districtAdmin.adminId
+            (winner) => winner.adminId === districtAdmin.adminId
         );
         if (winnerEntry) {
-        totalWinAmount += winnerEntry.winAmount || 0;
-        if (winnerEntry.status === "claimed") {
-            totalClaimedAmount += winnerEntry.winAmount || 0;
-        }
+            totalWinAmount += winnerEntry.winAmount || 0;
+            if (winnerEntry.status === "claimed") {
+                totalClaimedAmount += winnerEntry.winAmount || 0;
+            }
         }
     }
 
@@ -263,6 +261,7 @@ async function calculateDistrictAdminGameTotals(
         NTP,
     };
 }
+
 
 // New
 export const resetDistrictPassword = async (req, res) => {

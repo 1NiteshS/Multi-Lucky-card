@@ -5165,18 +5165,6 @@ export const getUserResultsForUser = async (req, res) => {
     const gameId = req.params.gameId || req.query.gameId;
     const { from, to } = req.body;
 
-    // Get authenticated user based on type
-    const authenticatedUser = req.user;
- 
-
-    // Check authentication
-    if (authenticatedUser !== userId) {
-      return res.status(403).json({ 
-        success: false, 
-        message: "Unauthorized access" 
-      });
-    }
-
     // Build query
     let query = {};
     if (gameId) {

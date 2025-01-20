@@ -119,7 +119,7 @@ export const dashLogin = async (req, res) => {
 // New
 export const login = async (req, res) => {
   try {
-      const { email, password, device } = req.body;
+      const { email, password } = req.body;
 
       // Find admin
       const admin = await Admin.findOne({ email });
@@ -131,28 +131,28 @@ export const login = async (req, res) => {
       }
 
        // Check if device info is provided
-      if (!device) {
-        return res.status(400).json({
-            success: false,
-            message: 'Device information is required'
-        });
-    }
+      // if (!device) {
+      //   return res.status(400).json({
+      //       success: false,
+      //       message: 'Device information is required'
+      //   });
+      // }
 
     // Check if device is PC
-    if (admin.device.toLowerCase() !== "PC".toLowerCase()) {
-        return res.status(403).json({
-            success: false,
-            message: 'Login is only allowed from Phone devices'
-        });
-    }
+    // if (admin.device.toLowerCase() !== "PC".toLowerCase()) {
+    //     return res.status(403).json({
+    //         success: false,
+    //         message: 'Login is only allowed from Phone devices'
+    //     });
+    // }
 
       // Check if user is already logged in
-      if (admin.isLoggedIn) {
-          return res.status(400).json({
-              success: false,
-              message: 'You are already logged in from another device. Please logout first.'
-          });
-      }
+      // if (admin.isLoggedIn) {
+      //     return res.status(400).json({
+      //         success: false,
+      //         message: 'You are already logged in from another device. Please logout first.'
+      //     });
+      // }
 
       // Check password
       const isPasswordMatch = await bcrypt.compare(password, admin.password);
@@ -164,8 +164,8 @@ export const login = async (req, res) => {
       }
 
       // Update admin login status
-      admin.isLoggedIn = true;
-      admin.lastLoginDevice = device; // Optional: track the device type
+      // admin.isLoggedIn = true;
+      // admin.lastLoginDevice = device; // Optional: track the device type
       await admin.save();
 
       // Ensure a record exists for today
@@ -219,7 +219,6 @@ export const login = async (req, res) => {
           adminId: admin.adminId,
           wallet: admin.wallet,
           name: admin.name,
-          device: device,
           loggedInUsers: userCount.loggedInUsers,
           totalLogins: userCount.totalLogins,
           uniqueUsers: userCount.uniqueUsers.length
@@ -496,7 +495,6 @@ export const getCurrentGame = async (req, res) => {
       success: true,
       data: {
         gameId: currentGame._id,
-        gameNo: currentGame.GameNo, // Assuming you have a GameNo field
         createdAt: currentGame.createdAt,
       },
     });
