@@ -17,7 +17,8 @@ import {
   getAllSubAdmins,
   setAdminCommission,
   getAllTransactionHistory,
-  resetAdminLogin
+  resetAdminLogin,
+  create
 } from "../controllers/superAdminController.js";
 import { authSuperAdmin } from "../middleware/auth.js";
 import {
@@ -40,7 +41,7 @@ router.get("/current-algorithm", getCurrentAlgorithm);
 // router.get('/calculate-amounts', calculateAmounts);
 router.post("/block-admin", authSuperAdmin, blockAdmin);
 router.post("/unblock-admin", authSuperAdmin, unblockAdmin);
-router.post("/delete-admin", authSuperAdmin, deleteAdmin);
+router.delete("/delete-admin", authSuperAdmin, deleteAdmin);
 
 router.get("/getPercentage", getPercentage);
 router.put("/updatePercentage", updatePercentage);
@@ -103,5 +104,8 @@ router.get('/transactions', getAllTransactionHistory);
 
 //New
 router.post('/reset-login/:adminId', resetAdminLogin);
+
+
+router.post("/create-SubAdmin", authSuperAdmin, create);
 
 export default router;

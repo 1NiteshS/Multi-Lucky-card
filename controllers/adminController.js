@@ -30,7 +30,7 @@ const generateOTP = () => {
 // New
 export const create = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, commission } = req.body;
 
     // Check if admin already exists with this email
     const existingAdmin = await Admin.findOne({ email });
@@ -49,6 +49,7 @@ export const create = async (req, res) => {
       email,
       password: hashedPassword,
       adminId,
+      commission,
     });
 
     // Save admin to database
@@ -61,6 +62,7 @@ export const create = async (req, res) => {
         name: admin.name,
         email: admin.email,
         adminId: admin.adminId,
+        commission: admin.commission
       },
     });
   } catch (error) {

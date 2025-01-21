@@ -3470,7 +3470,7 @@ export const placeBetThree = async (req, res) => {
 // Latest have to do 3 times
 //for 16 cards
 export const getAdminLatestBetsOne = async (req, res) => {
-  const { userId, type } = req.params;
+  const { userId } = req.params;
 
   try {
     // Find user based on type
@@ -4414,12 +4414,12 @@ export const claimWinningsThree = async (req, res) => {
 //for 16 cards
 export const claimAllWinningsOne = async (req, res) => {
   try {
-    const { adminId } = req.params;
+    const { userId } = req.params;
     let user;
     let totalClaimedAmount = 0;
     const claimedGames = [];
 
-      const admin = await User.findOne({ adminId });
+      const admin = await User.findOne({ userId });
       if (!admin) {
         return res.status(404).json({
           success: false,
@@ -4429,14 +4429,14 @@ export const claimAllWinningsOne = async (req, res) => {
 
       // Find all game results with unclaimed winnings for this admin
       const gameResults = await AdminGameResultOne.find({
-        "winners.adminId": adminId,
+        "winners.adminId": userId,
         "winners.status": "win",
       });
 
       // Process each game result
       for (const game of gameResults) {
         const adminWinners = game.winners.filter(
-          (winner) => winner.adminId === adminId && winner.status === "win"
+          (winner) => winner.adminId === userId && winner.status === "win"
         );
 
         for (const winner of adminWinners) {
@@ -4485,12 +4485,12 @@ export const claimAllWinningsOne = async (req, res) => {
 //for 10 cards
 export const claimAllWinningsTwo = async (req, res) => {
   try {
-    const { adminId } = req.params;
+    const { userId } = req.params;
     let user;
     let totalClaimedAmount = 0;
     const claimedGames = [];
 
-      const admin = await User.findOne({ adminId });
+      const admin = await User.findOne({ userId });
       if (!admin) {
         return res.status(404).json({
           success: false,
@@ -4500,14 +4500,14 @@ export const claimAllWinningsTwo = async (req, res) => {
 
       // Find all game results with unclaimed winnings for this admin
       const gameResults = await AdminGameResultTwo.find({
-        "winners.adminId": adminId,
+        "winners.adminId": userId,
         "winners.status": "win",
       });
 
       // Process each game result
       for (const game of gameResults) {
         const adminWinners = game.winners.filter(
-          (winner) => winner.adminId === adminId && winner.status === "win"
+          (winner) => winner.adminId === userId && winner.status === "win"
         );
 
         for (const winner of adminWinners) {
@@ -4556,12 +4556,12 @@ export const claimAllWinningsTwo = async (req, res) => {
 //for 10 cards
 export const claimAllWinningsThree = async (req, res) => {
   try {
-    const { adminId } = req.params;
+    const { userId } = req.params;
     let user;
     let totalClaimedAmount = 0;
     const claimedGames = [];
 
-      const admin = await User.findOne({ adminId });
+      const admin = await User.findOne({ userId });
       if (!admin) {
         return res.status(404).json({
           success: false,
@@ -4571,14 +4571,14 @@ export const claimAllWinningsThree = async (req, res) => {
 
       // Find all game results with unclaimed winnings for this admin
       const gameResults = await AdminGameResultThree.find({
-        "winners.adminId": adminId,
+        "winners.adminId": userId,
         "winners.status": "win",
       });
 
       // Process each game result
       for (const game of gameResults) {
         const adminWinners = game.winners.filter(
-          (winner) => winner.adminId === adminId && winner.status === "win"
+          (winner) => winner.adminId === userId && winner.status === "win"
         );
 
         for (const winner of adminWinners) {

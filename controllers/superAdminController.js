@@ -9,6 +9,7 @@ import AdminWinnings from "../models/AdminWinnings.js";
 import WalletTransaction from "../models/WalletTransaction.js";
 import AdminGameResult from "../models/AdminGameResult.js";
 import TransactionHistory from '../models/TransactionHistory.js';
+import { v4 as uuidv4 } from 'uuid';
 
 //New
 import SubAdmin from '../models/SubAdmin.js';
@@ -152,6 +153,7 @@ export const getGameHistory = async (req, res) => {
 export const blockAdmin = async (req, res) => {
   try {
     const { adminId } = req.body;
+    
     const admin = await Admin.findOne({ adminId: adminId });
     if (!admin) {
       return res.status(404).json({ error: "Admin not found" });
@@ -184,6 +186,7 @@ export const unblockAdmin = async (req, res) => {
 export const deleteAdmin = async (req, res) => {
   try {
     const { adminId } = req.body;
+    
     const result = await Admin.findOneAndDelete({ adminId: adminId });
     if (!result) {
       return res.status(404).json({ error: "Admin not found" });
@@ -715,3 +718,49 @@ export const resetAdminLogin = async (req, res) => {
       });
   }
 }
+
+export const create = async (req, res) => {
+  try {
+    const { name, email, password, commission } = req.body; 
+
+    // Assuming logged-in Admin's ID is available in `req.admin.adminId`
+    const adminId = req.superAdmin.superAdminId;
+
+    // Check if SubAdmin already exists with this email
+    // const existingSubAdmin = await SubAdmin.findOne({ email });
+
+    // if (existingSubAdmin) {
+    //   return res.status(400).send({ error: "Email already in use" });
+    // }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 8);
+
+    // Create new SubAdmin
+    const subAdminId = uuidv4();
+    
+    const subAdmin = new SubAdmin({
+      name,
+      email,
+      password: hashedPassword,
+      subAdminId,
+      commission,
+      createdBy: adminId, // Track the creator Admin
+    }); 
+
+    // Save SubAdmin to database
+    await subAdmin.save();
+
+    // Send success response
+    res.status(201).send({
+      message: "SubAdmin created successfully",
+      subAdmin: {
+        name: subAdmin.name,
+        email: subAdmin.email,
+        createdBy: subAdmin.createdBy,
+      },
+    });
+  } catch (error) {
+    res.status(400).send(error);
+  }
+};

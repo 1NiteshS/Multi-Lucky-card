@@ -182,9 +182,9 @@ router.get("/admin-game-one", getAdminGameResultOne);
 router.get("/admin-game-two", getAdminGameResultTwo);
 router.get("/admin-game-three", getAdminGameResultThree);
 
-router.get("/admin-results-one/:userId/:type", getAdminResultsOne);
-router.get("/admin-results-two/:userId/:type", getAdminResultsTwo);
-router.get("/admin-results-three/:userId/:type", getAdminResultsThree);
+router.get("/admin-results-one/:userId", getAdminResultsOne);
+router.get("/admin-results-two/:userId", getAdminResultsTwo);
+router.get("/admin-results-three/:userId", getAdminResultsThree);
 
 router.post("/claim-one", claimWinningsOne);
 router.post("/claim-two", claimWinningsTwo);
@@ -197,9 +197,9 @@ router.get("/recent-winning-cards-three", getLatestSelectedCardsThree);
 
 // Claim all winnings for an admin
 router.post("/claim-all/:userId", claimAllWinnings);
-router.post("/claim-all-one/:adminId", claimAllWinningsOne);
-router.post("/claim-all-two/:adminId", claimAllWinningsTwo);
-router.post("/claim-all-three/:adminId", claimAllWinningsThree);
+router.post("/claim-all-one/:userId", claimAllWinningsOne);
+router.post("/claim-all-two/:userId", claimAllWinningsTwo);
+router.post("/claim-all-three/:userId", claimAllWinningsThree);
 
 
 // Route to get all game details and total amounts

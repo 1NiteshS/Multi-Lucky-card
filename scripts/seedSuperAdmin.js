@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import bcrypt from 'bcrypt';
 import SuperAdmin from '../models/SuperAdmin.js';
+import { v4 as uuidv4 } from 'uuid';
 
 dotenv.config();
 
@@ -22,9 +23,11 @@ const seedSuperAdmin = async () => {
 
     const hashedPassword = await bcrypt.hash(superAdminPassword, 10);
 
+    const superAdminId = uuidv4();
     const superAdmin = new SuperAdmin({
       username: superAdminUsername,
       password: hashedPassword,
+      superAdminId,
     });
 
     await superAdmin.save();
