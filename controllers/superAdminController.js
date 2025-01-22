@@ -13,6 +13,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 //New
 import SubAdmin from '../models/SubAdmin.js';
+import DistrictAdmin from "../models/DistrictAdmin.js";
+import User from '../models/User.js';
 
 
 export const login = async (req, res) => {
@@ -529,9 +531,68 @@ async function calculateAdminGameTotals(games, adminGameResults, admin) {
 }
 
 // New
-export const getAllSubAdmins = async (req, res) => {
+// export const getAllSubAdmins = async (req, res) => {
+//   try {
+//       // Using aggregation to join SubAdmin with Admin collection
+//       const subAdmins = await SubAdmin.aggregate([
+//           {
+//               $lookup: {
+//                   from: 'admins', // Collection name for Admin model
+//                   localField: 'createdBy',
+//                   foreignField: 'adminId',
+//                   as: 'creatorAdmin'
+//               }
+//           },
+//           {
+//               $unwind: '$creatorAdmin'
+//           },
+//           {
+//               $project: {
+//                   name: 1,
+//                   email: 1,
+//                   subAdminId: 1,
+//                   type: 1,
+//                   isVerified: 1,
+//                   wallet: 1,
+//                   isBlocked: 1,
+//                   ked: 1,
+//                   isLoggedIn: 1,
+//                   commission: 1,
+//                   createdAt: 1,
+//                   createdBy: 1,
+//                   'creatorAdmin.name': 1,
+//                   'creatorAdmin.email': 1,
+//                   'creatorAdmin.adminId': 1
+//               }
+//           }
+//       ]);
+
+//       if (!subAdmins.length) {
+//           return res.status(404).json({
+//               success: false,
+//               message: "No SubAdmins found"
+//           });
+//       }
+
+//       return res.status(200).json({
+//           success: true,
+//           message: "SubAdmins fetched successfully",
+//           data: subAdmins,
+//           total: subAdmins.length
+//       });
+
+//   } catch (error) {
+//       console.error("Error in getAllSubAdmins:", error);
+//       return res.status(500).json({
+//           success: false,
+//           message: "Internal server error",
+//           error: error.message
+//       });
+//   }
+// };
+
+export  const getAllSubAdmins = async (req, res) => {
   try {
-      // Using aggregation to join SubAdmin with Admin collection
       const subAdmins = await SubAdmin.aggregate([
           {
               $lookup: {
@@ -542,7 +603,12 @@ export const getAllSubAdmins = async (req, res) => {
               }
           },
           {
-              $unwind: '$creatorAdmin'
+              $lookup: {
+                  from: 'superadmins', // Collection name for SuperAdmin model
+                  localField: 'createdBy',
+                  foreignField: 'superAdminId',
+                  as: 'creatorSuperAdmin'
+              }
           },
           {
               $project: {
@@ -558,9 +624,39 @@ export const getAllSubAdmins = async (req, res) => {
                   commission: 1,
                   createdAt: 1,
                   createdBy: 1,
+                  createdByModel: 1,
                   'creatorAdmin.name': 1,
                   'creatorAdmin.email': 1,
-                  'creatorAdmin.adminId': 1
+                  'creatorSuperAdmin.name': 1,
+                  'creatorSuperAdmin.email': 1
+              }
+          },
+          {
+              $addFields: {
+                  creator: {
+                      $cond: {
+                          if: { $eq: ['$createdByModel', 'Admin'] },
+                          then: { $arrayElemAt: ['$creatorAdmin', 0] },
+                          else: { $arrayElemAt: ['$creatorSuperAdmin', 0] }
+                      }
+                  }
+              }
+          },
+          {
+              $project: {
+                name: 1,
+                email: 1,
+                subAdminId: 1,
+                type: 1,
+                isVerified: 1,
+                wallet: 1,
+                isBlocked: 1,
+                ked: 1,
+                isLoggedIn: 1,
+                commission: 1,
+                createdAt: 1,
+                createdBy: 1,
+                creator: 1 // Merged data for creator (either Admin or SuperAdmin)
               }
           }
       ]);
@@ -588,6 +684,7 @@ export const getAllSubAdmins = async (req, res) => {
       });
   }
 };
+
 
 // New
 // Controller to set admin commission
@@ -719,7 +816,7 @@ export const resetAdminLogin = async (req, res) => {
   }
 }
 
-export const create = async (req, res) => {
+export const createSubAdmin = async (req, res) => {
   try {
     const { name, email, password, commission } = req.body; 
 
@@ -762,5 +859,428 @@ export const create = async (req, res) => {
     });
   } catch (error) {
     res.status(400).send(error);
+  }
+};
+
+export const blockSubAdmin = async (req, res) => {
+  try {
+    const { subAdminId } = req.body;
+    
+    const admin = await SubAdmin.findOne({ subAdminId: subAdminId });
+    if (!admin) {
+      return res.status(404).json({ error: "subAdmin not found" });
+    }
+    admin.isBlocked = true;
+    await admin.save();
+    res.status(200).json({ message: "subAdmin blocked successfully" });
+  } catch (error) {
+    console.error("Error blocking subAdmin:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const unblockSubAdmin = async (req, res) => {
+  try {
+    const { subAdminId } = req.body;
+    const admin = await SubAdmin.findOne({ subAdminId: subAdminId });
+    if (!admin) {
+      return res.status(404).json({ error: "subAdmin not found" });
+    }
+    admin.isBlocked = false;
+    await admin.save();
+    res.status(200).json({ message: "subAdmin unblocked successfully" });
+  } catch (error) {
+    console.error("Error unblocking subAdmin:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const deleteSubAdmin = async (req, res) => {
+  try {
+    const { subAdminId } = req.body;
+    
+    const result = await SubAdmin.findOneAndDelete({ subAdminId: subAdminId });
+    if (!result) {
+      return res.status(404).json({ error: "subAdmin not found" });
+    }
+    res.status(200).json({ message: "subAdmin deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting subAdmin:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export  const getAllDistrictAdmins = async (req, res) => {
+  try {  
+      const districtAdmins = await DistrictAdmin.aggregate([
+          {
+              $lookup: {
+                  from: 'subadmins',
+                  localField: 'createdBy',
+                  foreignField: 'subAdminId',
+                  as: 'creatorSubAdmin'
+              }
+          },
+          {
+              $lookup: {
+                  from: 'superadmins',
+                  localField: 'createdBy',
+                  foreignField: 'superAdminId',
+                  as: 'creatorSuperAdmin'
+              }
+          },
+          {
+            $project: {
+              name: 1,
+              email: 1,
+              districtAdminId: 1,
+              type: 1,
+              isVerified: 1,
+              wallet: 1,
+              isBlocked: 1,
+              ked: 1,
+              isLoggedIn: 1,
+              commission: 1,
+              createdAt: 1,
+              createdBy: 1,
+              createdByModel: 1,
+              'creatorSubAdmin.name': 1,
+              'creatorSubAdmin.email': 1,
+              'creatorSuperAdmin.name': 1,
+              'creatorSuperAdmin.email': 1
+            }
+          },
+          {
+              $addFields: {
+                  creator: {
+                      $cond: {
+                          if: { $eq: ['$createdByModel', 'SubAdmin'] },
+                          then: { $arrayElemAt: ['$creatorSubAdmin', 0] },
+                          else: { $arrayElemAt: ['$creatorSuperAdmin', 0] }
+                      }
+                  }
+              }
+          },
+          {
+            $project: {
+              name: 1,
+              email: 1,
+              districtAdminId: 1,
+              type: 1,
+              isVerified: 1,
+              wallet: 1,
+              isBlocked: 1,
+              ked: 1,
+              isLoggedIn: 1,
+              commission: 1,
+              createdAt: 1,
+              createdBy: 1,
+              creator: 1
+            }
+          }
+      ]);
+
+      if (!districtAdmins.length) {
+          return res.status(404).json({
+              success: false,
+              message: "No DistrictAdmins found"
+          });
+      }
+
+      return res.status(200).json({
+          success: true,
+          message: "DistrictAdmins fetched successfully",
+          data: districtAdmins,
+          total: districtAdmins.length
+      });
+
+  } catch (error) {
+      console.error("Error in getAllDistrictAdmins:", error);
+      return res.status(500).json({
+          success: false,
+          message: "Internal server error",
+          error: error.message
+      });
+  }
+};
+
+export const createDistrictAdmin = async (req, res) => {
+  try {
+    const { name, email, password, commission } = req.body; 
+
+    // Assuming logged-in Admin's ID is available in `req.admin.adminId`
+    const adminId = req.superAdmin.superAdminId;
+
+    // Check if SubAdmin already exists with this email
+    // const existingSubAdmin = await SubAdmin.findOne({ email });
+
+    // if (existingSubAdmin) {
+    //   return res.status(400).send({ error: "Email already in use" });
+    // }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 8);
+
+    // Create new SubAdmin
+    const districtAdminId = uuidv4();
+    
+    const districtAdmin = new DistrictAdmin({
+      name,
+      email,
+      password: hashedPassword,
+      districtAdminId,
+      commission,
+      createdBy: adminId, // Track the creator Admin
+    }); 
+
+    // Save SubAdmin to database
+    await districtAdmin.save();
+
+    // Send success response
+    res.status(201).send({
+      message: "DistrictAdmin created successfully",
+      districtAdmin: {
+        name: districtAdmin.name,
+        email: districtAdmin.email,
+        createdBy: districtAdmin.createdBy,
+      },
+    });
+  } catch (error) {
+    res.status(400).send(error);
+  }
+};
+
+export const blockDistrictAdmin = async (req, res) => {
+  try {
+    const { districtAdminId } = req.body;
+    
+    const admin = await DistrictAdmin.findOne({ districtAdminId: districtAdminId });
+    if (!admin) {
+      return res.status(404).json({ error: "subAdmin not found" });
+    }
+    admin.isBlocked = true;
+    await admin.save();
+    res.status(200).json({ message: "subAdmin blocked successfully" });
+  } catch (error) {
+    console.error("Error blocking subAdmin:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const unblockDistrictAdmin = async (req, res) => {
+  try {
+    const { districtAdminId } = req.body;
+    const admin = await DistrictAdmin.findOne({ districtAdminId: districtAdminId });
+    if (!admin) {
+      return res.status(404).json({ error: "subAdmin not found" });
+    }
+    admin.isBlocked = false;
+    await admin.save();
+    res.status(200).json({ message: "subAdmin unblocked successfully" });
+  } catch (error) {
+    console.error("Error unblocking subAdmin:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const deleteDistrictAdmin = async (req, res) => {
+  try {
+    const { districtAdminId } = req.body;
+    
+    const result = await DistrictAdmin.findOneAndDelete({ districtAdminId: districtAdminId });
+    if (!result) {
+      return res.status(404).json({ error: "subAdmin not found" });
+    }
+    res.status(200).json({ message: "subAdmin deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting subAdmin:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export  const getAllUsers = async (req, res) => {
+  try {
+      const user = await User.aggregate([
+          {
+              $lookup: {
+                  from: 'districtadmins', // Collection name for Admin model
+                  localField: 'createdBy',
+                  foreignField: 'districtAdminId',
+                  as: 'creatorDistrictAdmin'
+              }
+          },
+          {
+              $lookup: {
+                  from: 'superadmins', // Collection name for SuperAdmin model
+                  localField: 'createdBy',
+                  foreignField: 'superAdminId',
+                  as: 'creatorSuperAdmin'
+              }
+          },
+          {
+            $project: {
+              name: 1,
+              email: 1,
+              userId: 1,
+              type: 1,
+              isVerified: 1,
+              wallet: 1,
+              isBlocked: 1,
+              ked: 1,
+              isLoggedIn: 1,
+              commission: 1,
+              createdAt: 1,
+              createdBy: 1,
+              createdByModel: 1,
+              'creatorDistrictAdmin.name': 1,
+              'creatorDistrictAdmin.email': 1,
+              'creatorSuperAdmin.username': 1,
+            }
+          },
+          {
+              $addFields: {
+                  creator: {
+                      $cond: {
+                          if: { $eq: ['$createdByModel', 'DistrictAdmin'] },
+                          then: { $arrayElemAt: ['$creatorDistrictAdmin', 0] },
+                          else: { $arrayElemAt: ['$creatorSuperAdmin', 0] }
+                      }
+                  }
+              }
+          },
+          {
+            $project: {
+              name: 1,
+              email: 1,
+              userId: 1,
+              type: 1,
+              isVerified: 1,
+              wallet: 1,
+              isBlocked: 1,
+              ked: 1,
+              isLoggedIn: 1,
+              commission: 1,
+              createdAt: 1,
+              createdBy: 1,
+              creator: 1
+            }
+          }
+      ]);
+
+      if (!user.length) {
+          return res.status(404).json({
+              success: false,
+              message: "No User found"
+          });
+      }
+
+      return res.status(200).json({
+          success: true,
+          message: "User fetched successfully",
+          data: user,
+          total: user.length
+      });
+
+  } catch (error) {
+      console.error("Error in User:", error);
+      return res.status(500).json({
+          success: false,
+          message: "Internal server error",
+          error: error.message
+      });
+  }
+};
+
+export const createUsers = async (req, res) => {
+  try {
+    const { name, email, password, commission } = req.body; 
+
+    // Assuming logged-in Admin's ID is available in `req.admin.adminId`
+    const adminId = req.superAdmin.superAdminId;
+
+    // Check if SubAdmin already exists with this email
+    // const existingSubAdmin = await SubAdmin.findOne({ email });
+
+    // if (existingSubAdmin) {
+    //   return res.status(400).send({ error: "Email already in use" });
+    // }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 8);
+
+    // Create new SubAdmin
+    const userId = uuidv4();
+    
+    const user = new User({
+      name,
+      email,
+      password: hashedPassword,
+      userId,
+      commission,
+      createdBy: adminId, // Track the creator Admin
+    }); 
+
+    // Save SubAdmin to database
+    await user.save();
+
+    // Send success response
+    res.status(201).send({
+      message: "DistrictAdmin created successfully",
+      user: {
+        name: user.name,
+        email: user.email,
+        createdBy: user.createdBy,
+      },
+    });
+  } catch (error) {
+    res.status(400).send(error);
+  }
+};
+
+export const blockUsers = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    
+    const admin = await User.findOne({ userId: userId });
+    if (!admin) {
+      return res.status(404).json({ error: "subAdmin not found" });
+    }
+    admin.isBlocked = true;
+    await admin.save();
+    res.status(200).json({ message: "subAdmin blocked successfully" });
+  } catch (error) {
+    console.error("Error blocking subAdmin:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const unblockUsers = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const admin = await User.findOne({ userId: userId });
+    if (!admin) {
+      return res.status(404).json({ error: "subAdmin not found" });
+    }
+    admin.isBlocked = false;
+    await admin.save();
+    res.status(200).json({ message: "subAdmin unblocked successfully" });
+  } catch (error) {
+    console.error("Error unblocking subAdmin:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const deleteUsers = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    
+    const result = await User.findOneAndDelete({ userId: userId });
+    if (!result) {
+      return res.status(404).json({ error: "subAdmin not found" });
+    }
+    res.status(200).json({ message: "subAdmin deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting subAdmin:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };

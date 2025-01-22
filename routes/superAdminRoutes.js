@@ -18,11 +18,23 @@ import {
   setAdminCommission,
   getAllTransactionHistory,
   resetAdminLogin,
-  create
+  createSubAdmin,
+  deleteSubAdmin,
+  blockSubAdmin,
+  unblockSubAdmin,
+  deleteDistrictAdmin,
+  unblockDistrictAdmin,
+  blockDistrictAdmin,
+  createDistrictAdmin,
+  createUsers,
+  blockUsers,
+  unblockUsers,
+  deleteUsers,
+  getAllDistrictAdmins,
+  getAllUsers,
 } from "../controllers/superAdminController.js";
 import { authSuperAdmin } from "../middleware/auth.js";
 import {
-  calculateAmounts,
   chooseAlgorithm,
   getCurrentAlgorithm,
 } from "../controllers/cardController.js";
@@ -106,6 +118,21 @@ router.get('/transactions', getAllTransactionHistory);
 router.post('/reset-login/:adminId', resetAdminLogin);
 
 
-router.post("/create-SubAdmin", authSuperAdmin, create);
+router.post("/create-SubAdmin", authSuperAdmin, createSubAdmin);
+router.post("/block-Subadmin", authSuperAdmin, blockSubAdmin);
+router.post("/unblock-Subadmin", authSuperAdmin, unblockSubAdmin);
+router.delete("/delete-Subadmin", authSuperAdmin, deleteSubAdmin);
+
+router.get('/getAllDistrictAdmin', getAllDistrictAdmins);
+router.post("/create-Districtadmin", authSuperAdmin, createDistrictAdmin);
+router.post("/block-Districtadmin", authSuperAdmin, blockDistrictAdmin);
+router.post("/unblock-Districtadmin", authSuperAdmin, unblockDistrictAdmin);
+router.delete("/delete-Districtadmin", authSuperAdmin, deleteDistrictAdmin);
+
+router.get('/getAllUsers', getAllUsers);
+router.post("/create-Users", authSuperAdmin, createUsers);
+router.post("/block-Users", authSuperAdmin, blockUsers);
+router.post("/unblock-Users", authSuperAdmin, unblockUsers);
+router.delete("/delete-Users", authSuperAdmin, deleteUsers);
 
 export default router;

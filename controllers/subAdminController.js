@@ -35,7 +35,8 @@ export const create = async (req, res) => {
       email,
       password: hashedPassword,
       subAdminId,
-      createdBy: adminId, // Track the creator Admin
+      createdBy: adminId,
+      createdByModel: 'Admin'  // Track the creator Admin
     });
 
     // Save SubAdmin to database

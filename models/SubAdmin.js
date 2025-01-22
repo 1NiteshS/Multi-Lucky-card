@@ -16,7 +16,20 @@ const SubAdminSchema = new mongoose.Schema(
         device: { type: String, default: "Phone"},
         isLoggedIn: { type: Boolean, default: false },
         commission: {type: Number, default: 0},
-        createdBy: { type: String, ref: 'Admin' }, // Field to track which Admin created this SubAdmin
+        // createdBy: { type: String, ref: 'Admin' }, // Field to track which Admin created this SubAdmin
+        // Use refPath to dynamically reference Admin or SuperAdmin
+        createdBy: { 
+            type: String, 
+            required: true,
+            refPath: 'createdByModel' // This tells Mongoose to refer to the model specified in 'createdByModel'
+        },
+        
+        // Model for the 'createdBy' field (either Admin or SuperAdmin)
+        createdByModel: { 
+            type: String, 
+            required: true, 
+            enum: ['Admin', 'SuperAdmin'] // This ensures that only 'Admin' or 'SuperAdmin' can be used
+        }
     },
     { timestamps: true }
 );
